@@ -5,10 +5,14 @@
  */
 
 const byte NUM_ELEMENTOS = 3;
+const byte MAX_NIVEL = 50;
 
 const byte LEDS[NUM_ELEMENTOS] = {2, 3, 4};
 const byte BOTONES[NUM_ELEMENTOS] = {5, 6, 7};
 const byte BUZZER = 8;
+
+byte secuencia[MAX_NIVEL];
+byte nivel = 1;
 
 void setup() {
   // Configuración de los LEDs
@@ -24,9 +28,29 @@ void setup() {
 
   // Configuración del buzzer
   pinMode(BUZZER, OUTPUT);
+
+  // Inicialización de la semilla aleatoria
+  randomSeed(analogRead(A0));
 }
 
 void loop() {
-  // En este commit se prepara el hardware.
-  // La lógica del juego se agregará en los siguientes commits.
+  // Agregar un nuevo elemento a la secuencia
+  secuencia[nivel - 1] = random(0, NUM_ELEMENTOS);
+
+  // Mostrar el nuevo elemento mediante el LED correspondiente
+  byte elemento = secuencia[nivel - 1];
+
+  digitalWrite(LEDS[elemento], HIGH);
+  delay(500);
+  digitalWrite(LEDS[elemento], LOW);
+
+  // Por ahora esperamos antes de comenzar el siguiente nivel
+  delay(1000);
+
+  nivel++;
+
+  // Reiniciar después del nivel máximo
+  if (nivel > MAX_NIVEL) {
+    nivel = 1;
+  }
 }
