@@ -11,6 +11,7 @@ const byte LEDS[NUM_ELEMENTOS] = {2, 3, 4};
 const byte BOTONES[NUM_ELEMENTOS] = {5, 6, 7};
 const byte BUZZER = 8;
 
+const unsigned long DEBOUNCE_MS = 40;
 const unsigned long TIEMPO_LED = 500;
 const unsigned long PAUSA_SECUENCIA = 150;
 
@@ -21,9 +22,7 @@ void setup() {
   for (byte i = 0; i < NUM_ELEMENTOS; i++) {
     pinMode(LEDS[i], OUTPUT);
     digitalWrite(LEDS[i], LOW);
-  }
 
-  for (byte i = 0; i < NUM_ELEMENTOS; i++) {
     pinMode(BOTONES[i], INPUT_PULLUP);
   }
 
@@ -33,24 +32,27 @@ void setup() {
 }
 
 void loop() {
-  // Agregar un nuevo elemento a la secuencia
   secuencia[nivel - 1] = random(0, NUM_ELEMENTOS);
 
-  // Reproducir la secuencia completa
   reproducirSecuencia();
 
-  // Esperar la respuesta del jugador
   if (leerSecuenciaJugador()) {
+    sonidoExito();
     nivel++;
 
     if (nivel > MAX_NIVEL) {
       nivel = 1;
+      limpiarSecuencia();
+      delay(1000);
     }
 
     delay(500);
   } else {
-    // Si se equivoca, reiniciar el juego
+    gameOver();
+
     nivel = 1;
+    limpiarSecuencia();
+
     delay(1000);
   }
 }
@@ -90,7 +92,6 @@ bool leerSecuenciaJugador() {
     digitalWrite(LEDS[boton], LOW);
     noTone(BUZZER);
 
-    // Comprobar si el botón corresponde a la secuencia
     if (boton != secuencia[posicion]) {
       return false;
     }
@@ -106,23 +107,74 @@ int esperarBoton() {
 
       if (digitalRead(BOTONES[i]) == LOW) {
 
-        delay(40);
+        unsigned long inicio = millis();
 
-        if (digitalRead(BOTONES[i]) == LOW) {
+        while (digitalRead(BOTONES[i]) == LOW) {
 
-          while (digitalRead(BOTONES[i]) == LOW) {
-            delay(1);
+          if (millis() - inicio >= DEBOUNCE_MS) {
+
+            if (digitalRead(BOTONES[i]) == LOW) {
+
+              while (digitalRead(BOTONES[i]) == LOW) {
+                delay(1);
+              }
+
+              return i;
+            }
           }
-
-          return i;
         }
       }
     }
   }
 }
 
+void sonidoExito() {
+  tone(BUZZER, 523);
+  delay(120);
+
+  tone(BUZZER, 659);
+  delay(120);
+
+  tone(BUZZER, 784);
+  delay(180);
+
+  noTone(BUZZER);
+}
+
+void gameOver() {
+  tone(BUZZER, 180);
+
+  for (byte repeticion = 0; repeticion < 3; repeticion++) {
+
+    for (byte i = 0; i < NUM_ELEMENTOS; i++) {
+      digitalWrite(LEDS[i], HIGH);
+    }
+
+    delay(200);
+
+    apagarLEDs();
+
+    delay(200);
+  }
+
+  noTone(BUZZER);
+}
+
+void apagarLEDs() {
+  for (byte i = 0; i < NUM_ELEMENTOS; i++) {
+    digitalWrite(LEDS[i], LOW);
+  }
+}
+
+void limpiarSecuencia() {
+  for (byte i = 0; i < MAX_NIVEL; i++) {
+    secuencia[i] = 0;
+  }
+}
+
 unsigned int frecuenciaElemento(byte elemento) {
   switch (elemento) {
+
     case 0:
       return 440;
 
